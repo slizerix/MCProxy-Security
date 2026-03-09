@@ -1,0 +1,84 @@
+# MCP Firewall Gateway — default configuration
+#
+# Override values via this file or environment variables:
+#   MCP_UPSTREAM_COMMAND  — space-separated command to launch upstream MCP server
+#   MCP_FAIL_OPEN         — set to "true" to fail-open on policy engine errors
+#   MCP_LOG_LEVEL         — DEBUG / INFO / WARNING / ERROR
+
+upstream:
+  command: []          # e.g. ["npx", "-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+  env: {}
+
+shell_policy:
+  enabled: true
+  allowed_commands:
+    - ls
+    - dir
+    - cat
+    - head
+    - tail
+    - echo
+    - pwd
+    - git status
+    - git log
+    - git diff
+    - git branch
+    - python --version
+    - pip list
+    - whoami
+    - date
+  blocked_patterns:
+    - 'rm\s+(-\w+\s+)*-r'
+    - 'rm\s+(-\w+\s+)*-f'
+    - 'mkfs'
+    - 'dd\s+.*of=/dev/'
+    - '>\s*/dev/sd'
+    - 'chmod\s+777'
+    - 'curl\s+.*\|\s*(ba)?sh'
+    - 'wget\s+.*\|\s*(ba)?sh'
+    - 'nc\s+-l'
+    - 'shutdown'
+    - 'reboot'
+    - 'format\s+[a-zA-Z]:'
+  blocked_commands:
+    - rm
+    - rmdir
+    - del
+    - format
+    - mkfs
+    - dd
+    - fdisk
+    - shutdown
+    - reboot
+    - halt
+    - poweroff
+    - kill
+    - killall
+    - pkill
+    - net user
+    - net localgroup
+    - reg delete
+    - reg add
+
+prompt_injection:
+  enabled: true
+  score_threshold: 0.6
+  mode: hard            # hard = deny on detection, soft = log only
+
+pii:
+  enabled: true
+  categories:
+    - email
+    - phone
+    - ssn
+    - credit_card
+    - api_token
+  custom_patterns: {}
+  redaction_string: "***REDACTED***"
+
+logging:
+  level: INFO
+  redact_in_logs: true
+  log_file: null        # set a path to also write logs to a file
+
+fail_closed: true       # on policy engine errors: true = block, false = allow
