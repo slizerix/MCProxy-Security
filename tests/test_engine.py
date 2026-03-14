@@ -2,7 +2,7 @@
 
 import pytest
 
-from gateway.app.policy.engine import (
+from mcp_gateway.policy.engine import (
     Decision,
     PolicyEngine,
     PolicyResult,

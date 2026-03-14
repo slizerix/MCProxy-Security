@@ -1,26 +1,22 @@
 """
 Live interactive testing console for the MCP Firewall Gateway.
 
-Type shell commands, prompts, or text with PII and watch the firewall
-evaluate each one in real time.
-
 Usage:
-    python interactive_test.py
+    python -m scripts.interactive_test
 """
 
 import asyncio
 import json
 import sys
 
-from gateway.app.config import load_config
-from gateway.app.mcp_transport import StdioTransport
-from gateway.app.policy.engine import PolicyEngine
-from gateway.app.policy.rules_pii import PIIRule
-from gateway.app.policy.rules_prompt_injection import PromptInjectionRule
-from gateway.app.policy.rules_shell import ShellSafetyRule
-from gateway.app.proxy import MCPProxy
+from mcp_gateway.config import load_config
+from mcp_gateway.transport import StdioTransport
+from mcp_gateway.policy.engine import PolicyEngine
+from mcp_gateway.policy.pii import PIIRule
+from mcp_gateway.policy.prompt_injection import PromptInjectionRule
+from mcp_gateway.policy.shell import ShellSafetyRule
+from mcp_gateway.proxy import MCPProxy
 
-# ── Colors ──
 RED = "\033[91m"
 GREEN = "\033[92m"
 YELLOW = "\033[93m"
@@ -29,8 +25,6 @@ MAGENTA = "\033[95m"
 BOLD = "\033[1m"
 DIM = "\033[2m"
 RESET = "\033[0m"
-
-# ── Fake upstream (echoes back whatever it receives) ──
 
 TOOLS_LIST = [
     {"name": "run_command", "description": "Execute a shell command"},
@@ -75,8 +69,6 @@ def fake_handle(msg: dict) -> dict | None:
             "error": {"code": -32601, "message": f"Unknown: {method}"}}
 
 
-# ── In-memory transport ──
-
 class MemWriter:
     def __init__(self):
         self.chunks: list[bytes] = []
@@ -111,8 +103,6 @@ async def run_through_proxy(engine: PolicyEngine, request: dict) -> dict:
     msgs = cw.messages()
     return msgs[0] if msgs else {}
 
-
-# ── Display helpers ──
 
 def banner():
     print(f"""
@@ -161,13 +151,11 @@ def show_result(resp: dict):
         print(f"\n  {DIM}(no response){RESET}")
 
 
-# ── Main loop ──
-
 async def main():
     import logging
     logging.disable(logging.CRITICAL)
 
-    cfg = load_config("gateway/config.yaml")
+    cfg = load_config("config.yaml")
     engine = PolicyEngine(fail_closed=cfg.fail_closed)
     engine.add_rule(PromptInjectionRule(cfg.prompt_injection))
     engine.add_rule(ShellSafetyRule(cfg.shell_policy))

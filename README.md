@@ -31,18 +31,18 @@ The gateway presents itself as a standard MCP server (over stdio) to the AI clie
 pip install -r requirements.txt
 
 # Run the gateway in front of any MCP server
-python -m gateway.app.main -- <upstream-mcp-command>
+python -m mcp_gateway.main -- <upstream-mcp-command>
 
 # Example: wrap the filesystem MCP server
-python -m gateway.app.main -- npx -y @modelcontextprotocol/server-filesystem /tmp
+python -m mcp_gateway.main -- npx -y @modelcontextprotocol/server-filesystem /tmp
 ```
 
 ### Configuration
 
-Copy and edit `gateway/config.yaml`, or point to a custom file:
+Edit `config.yaml` in the project root, or point to a custom file:
 
 ```bash
-python -m gateway.app.main --config my_config.yaml -- <upstream-command>
+python -m mcp_gateway.main --config my_config.yaml -- <upstream-command>
 ```
 
 Environment variable overrides:
@@ -115,29 +115,45 @@ python -m pytest -v
 - Proxy integration (request forwarding, denial, sanitization, notifications)
 - Configuration loading and env overrides
 
+### Interactive test console
+
+```bash
+python -m scripts.interactive_test
+```
+
+### Automated smoke test
+
+```bash
+python -m scripts.smoke_test
+```
+
 ## Project layout
 
 ```
-gateway/
-├── config.yaml                     # Default configuration
-├── app/
-│   ├── main.py                     # Entrypoint
-│   ├── proxy.py                    # Bidirectional MCP proxy
-│   ├── mcp_transport.py            # Async stdio JSON-RPC transport
-│   ├── config.py                   # Configuration models and loading
-│   ├── logging_middleware.py        # Structured audit logging with redaction
+├── config.yaml                        # Default configuration
+├── requirements.txt
+├── pytest.ini
+├── mcp_gateway/                       # Core package
+│   ├── main.py                        # CLI entrypoint
+│   ├── proxy.py                       # Bidirectional MCP proxy
+│   ├── transport.py                   # Async stdio JSON-RPC transport
+│   ├── config.py                      # Configuration models and loading
+│   ├── audit.py                       # Structured audit logging with redaction
 │   └── policy/
-│       ├── engine.py               # Policy engine, rule interface, decisions
-│       ├── rules_prompt_injection.py
-│       ├── rules_shell.py
-│       └── rules_pii.py
-└── tests/
-    ├── test_engine.py
-    ├── test_prompt_injection.py
-    ├── test_shell.py
-    ├── test_pii.py
-    ├── test_proxy.py
-    └── test_config.py
+│       ├── engine.py                  # Policy engine, rule interface, decisions
+│       ├── prompt_injection.py        # Prompt injection scoring rules
+│       ├── shell.py                   # Shell command safety rules
+│       └── pii.py                     # PII detection and redaction
+├── tests/                             # Unit and integration tests
+│   ├── test_engine.py
+│   ├── test_prompt_injection.py
+│   ├── test_shell.py
+│   ├── test_pii.py
+│   ├── test_proxy.py
+│   └── test_config.py
+└── scripts/                           # Manual testing utilities
+    ├── interactive_test.py
+    └── smoke_test.py
 ```
 
 ## Using with Cursor
@@ -150,8 +166,8 @@ Add to your `.cursor/mcp.json`:
     "guarded-filesystem": {
       "command": "python",
       "args": [
-        "-m", "gateway.app.main",
-        "--config", "gateway/config.yaml",
+        "-m", "mcp_gateway.main",
+        "--config", "config.yaml",
         "--",
         "npx", "-y", "@modelcontextprotocol/server-filesystem", "/your/path"
       ]

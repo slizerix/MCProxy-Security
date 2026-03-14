@@ -2,9 +2,9 @@
 
 import pytest
 
-from gateway.app.config import PIIConfig
-from gateway.app.policy.engine import Decision, RequestContext, ResponseContext
-from gateway.app.policy.rules_pii import PIIDetector, PIIRule
+from mcp_gateway.config import PIIConfig
+from mcp_gateway.policy.engine import Decision, RequestContext, ResponseContext
+from mcp_gateway.policy.pii import PIIDetector, PIIRule
 
 
 @pytest.fixture

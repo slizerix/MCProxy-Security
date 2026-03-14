@@ -93,7 +93,6 @@ async def open_upstream_transport(
     reader = process.stdout
     writer_transport = process.stdin
 
-    # Wrap subprocess pipes into a StreamReader / StreamWriter pair
     sr = asyncio.StreamReader()
 
     async def _pipe_reader():

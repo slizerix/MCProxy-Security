@@ -11,14 +11,12 @@ import logging
 import re
 from typing import Any
 
-from gateway.app.config import PromptInjectionConfig
-from gateway.app.policy.engine import Decision, PolicyResult, PolicyRule, RequestContext, ResponseContext
+from mcp_gateway.config import PromptInjectionConfig
+from mcp_gateway.policy.engine import Decision, PolicyResult, PolicyRule, RequestContext, ResponseContext
 
 logger = logging.getLogger(__name__)
 
-# (pattern, weight, description)
 _INJECTION_PATTERNS: list[tuple[re.Pattern[str], float, str]] = [
-    # Direct instruction-override attempts
     (re.compile(r"ignore\s+(all\s+)?(previous|prior|above)\s+(instructions|rules|guidelines)", re.I), 0.9,
      "instruction override attempt"),
     (re.compile(r"disregard\s+(all\s+)?(your\s+)?(previous|prior|above)?\s*(instructions|rules|directives|guidelines)", re.I), 0.9,
@@ -30,31 +28,26 @@ _INJECTION_PATTERNS: list[tuple[re.Pattern[str], float, str]] = [
     (re.compile(r"new\s+(role|persona|identity|instructions)\s*:", re.I), 0.75,
      "role reassignment attempt"),
 
-    # System-prompt probing
     (re.compile(r"(print|show|reveal|repeat|output)\s+(your\s+)?(system\s+prompt|instructions|rules)", re.I), 0.8,
      "system prompt extraction"),
     (re.compile(r"what\s+(are|were)\s+your\s+(initial|original|system)\s+(instructions|prompt|rules)", re.I), 0.75,
      "system prompt probing"),
 
-    # Data exfiltration intent
     (re.compile(r"(exfiltrate|steal|extract|send)\s+.*\b(data|secrets?|tokens?|keys?|credentials?|passwords?)\b", re.I), 0.9,
      "data exfiltration intent"),
     (re.compile(r"(encode|base64|hex)\s+(and\s+)?(send|transmit|post|upload)\b", re.I), 0.7,
      "encoded exfiltration attempt"),
 
-    # Instruction injection delimiters
     (re.compile(r"<\|?(system|im_start|im_end|endoftext)\|?>", re.I), 0.85,
      "special token injection"),
     (re.compile(r"\[INST\]|\[/INST\]|\[SYS\]", re.I), 0.85,
      "instruction tag injection"),
 
-    # Prompt-leaking concatenation tricks
     (re.compile(r"---+\s*(begin|start|new)\s*(prompt|instruction|system)", re.I), 0.7,
      "delimiter injection"),
     (re.compile(r"#{3,}\s*(system|admin|root)\s*(prompt|message|instructions?)", re.I), 0.7,
      "markdown header injection"),
 
-    # Do-anything-now jailbreak family
     (re.compile(r"\bDAN\b.*\b(mode|jailbreak|persona)\b", re.I), 0.8,
      "DAN-style jailbreak"),
     (re.compile(r"(developer|debug|admin|sudo|god)\s*mode", re.I), 0.75,
@@ -115,5 +108,4 @@ class PromptInjectionRule(PolicyRule):
         return PolicyResult(decision=Decision.ALLOW, score=total)
 
     def evaluate_response(self, ctx: ResponseContext) -> PolicyResult:
-        # Prompt injection is primarily a request-side concern
         return PolicyResult(decision=Decision.ALLOW)

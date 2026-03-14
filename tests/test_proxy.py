@@ -5,8 +5,8 @@ import json
 
 import pytest
 
-from gateway.app.policy.engine import Decision, PolicyEngine, PolicyResult, PolicyRule, RequestContext, ResponseContext
-from gateway.app.proxy import MCPProxy, _jsonrpc_error
+from mcp_gateway.policy.engine import Decision, PolicyEngine, PolicyResult, PolicyRule, RequestContext, ResponseContext
+from mcp_gateway.proxy import MCPProxy, _jsonrpc_error
 
 
 class DenyShellRule(PolicyRule):
@@ -37,10 +37,9 @@ class RedactResponseRule(PolicyRule):
 
 def _make_transport_pair():
     """Create an in-memory StreamReader/Writer pair for testing."""
-    from gateway.app.mcp_transport import StdioTransport
+    from mcp_gateway.transport import StdioTransport
 
     reader = asyncio.StreamReader()
-    # Simple writable buffer that we can inspect
     written: list[bytes] = []
 
     class FakeWriter:
@@ -56,7 +55,6 @@ def _make_transport_pair():
 
 @pytest.mark.asyncio
 async def test_allowed_request_forwarded():
-    """An allowed request passes through to upstream and response comes back."""
     client_transport, client_reader, client_written = _make_transport_pair()
     upstream_transport, upstream_reader, upstream_written = _make_transport_pair()
 
@@ -73,12 +71,10 @@ async def test_allowed_request_forwarded():
 
     await proxy.run()
 
-    # Request was forwarded to upstream
     assert len(upstream_written) == 1
     forwarded = json.loads(upstream_written[0].decode())
     assert forwarded["method"] == "tools/list"
 
-    # Response was forwarded to client
     assert len(client_written) == 1
     returned = json.loads(client_written[0].decode())
     assert returned["result"] == {"tools": []}
@@ -86,7 +82,6 @@ async def test_allowed_request_forwarded():
 
 @pytest.mark.asyncio
 async def test_denied_request_returns_error():
-    """A denied request never reaches upstream; client gets an error."""
     client_transport, client_reader, client_written = _make_transport_pair()
     upstream_transport, upstream_reader, upstream_written = _make_transport_pair()
 
@@ -106,10 +101,8 @@ async def test_denied_request_returns_error():
 
     await proxy.run()
 
-    # Nothing was sent to upstream
     assert len(upstream_written) == 0
 
-    # Client received an error
     assert len(client_written) == 1
     err = json.loads(client_written[0].decode())
     assert "error" in err
@@ -119,7 +112,6 @@ async def test_denied_request_returns_error():
 
 @pytest.mark.asyncio
 async def test_response_sanitization():
-    """A response with PII-like content is sanitized before reaching client."""
     client_transport, client_reader, client_written = _make_transport_pair()
     upstream_transport, upstream_reader, upstream_written = _make_transport_pair()
 
@@ -143,7 +135,6 @@ async def test_response_sanitization():
 
 @pytest.mark.asyncio
 async def test_notification_passes_through():
-    """Notifications (no id) should pass through without policy checks."""
     client_transport, client_reader, client_written = _make_transport_pair()
     upstream_transport, upstream_reader, upstream_written = _make_transport_pair()
 

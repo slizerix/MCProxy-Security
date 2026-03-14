@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-from gateway.app.config import GatewayConfig, load_config
+from mcp_gateway.config import GatewayConfig, load_config
 
 
 class TestConfigLoading:

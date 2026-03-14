@@ -13,35 +13,25 @@ import logging
 import re
 from typing import Any
 
-from gateway.app.config import PIIConfig
-from gateway.app.policy.engine import Decision, PolicyResult, PolicyRule, RequestContext, ResponseContext
+from mcp_gateway.config import PIIConfig
+from mcp_gateway.policy.engine import Decision, PolicyResult, PolicyRule, RequestContext, ResponseContext
 
 logger = logging.getLogger(__name__)
 
-
-# Built-in PII detector patterns keyed by category name
 _BUILTIN_PATTERNS: dict[str, re.Pattern[str]] = {
-    "email": re.compile(
-        r"\b[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+\b"
-    ),
-    "phone": re.compile(
-        r"\b(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b"
-    ),
-    "ssn": re.compile(
-        r"\b\d{3}-\d{2}-\d{4}\b"
-    ),
-    "credit_card": re.compile(
-        r"\b(?:\d[ -]*?){13,19}\b"
-    ),
+    "email": re.compile(r"\b[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+\b"),
+    "phone": re.compile(r"\b(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b"),
+    "ssn": re.compile(r"\b\d{3}-\d{2}-\d{4}\b"),
+    "credit_card": re.compile(r"\b(?:\d[ -]*?){13,19}\b"),
     "api_token": re.compile(
         r"\b("
-        r"sk-[a-zA-Z0-9]{20,}"  # OpenAI-style
-        r"|xoxp-[a-zA-Z0-9-]+"  # Slack tokens
+        r"sk-[a-zA-Z0-9]{20,}"
+        r"|xoxp-[a-zA-Z0-9-]+"
         r"|xoxb-[a-zA-Z0-9-]+"
-        r"|ghp_[a-zA-Z0-9]{36}"  # GitHub PAT
+        r"|ghp_[a-zA-Z0-9]{36}"
         r"|gho_[a-zA-Z0-9]{36}"
-        r"|glpat-[a-zA-Z0-9_-]{20,}"  # GitLab PAT
-        r"|AKIA[0-9A-Z]{16}"  # AWS access key
+        r"|glpat-[a-zA-Z0-9_-]{20,}"
+        r"|AKIA[0-9A-Z]{16}"
         r")\b"
     ),
 }

@@ -11,11 +11,10 @@ import sys
 from datetime import datetime, timezone
 from typing import Any
 
-from gateway.app.config import LoggingConfig
+from mcp_gateway.config import LoggingConfig
 
-logger = logging.getLogger("gateway.audit")
+logger = logging.getLogger("mcp_gateway.audit")
 
-# Lightweight patterns used for redacting logs (mirrors the PII rule defaults)
 _LOG_REDACTION_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("email", re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")),
     ("ssn", re.compile(r"\b\d{3}-\d{2}-\d{4}\b")),

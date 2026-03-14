@@ -1,5 +1,5 @@
 """
-MCP Proxy — routes JSON-RPC messages between the downstream AI client and the
+MCP Proxy -- routes JSON-RPC messages between the downstream AI client and the
 upstream MCP server, running each message through the policy engine.
 """
 
@@ -10,8 +10,8 @@ import copy
 import logging
 from typing import Any
 
-from gateway.app.mcp_transport import StdioTransport
-from gateway.app.policy.engine import (
+from mcp_gateway.transport import StdioTransport
+from mcp_gateway.policy.engine import (
     Decision,
     PolicyEngine,
     PolicyResult,
@@ -21,7 +21,6 @@ from gateway.app.policy.engine import (
 
 logger = logging.getLogger(__name__)
 
-# MCP methods that invoke tools (where shell / prompt-injection policies matter)
 TOOL_CALL_METHODS = {"tools/call"}
 
 
@@ -70,7 +69,6 @@ class MCPProxy:
         self.client = client_transport
         self.upstream = upstream_transport
         self.engine = policy_engine
-        # Track pending request IDs → metadata so we can apply response policies
         self._pending: dict[Any, dict[str, str]] = {}
 
     async def run(self) -> None:
@@ -93,7 +91,6 @@ class MCPProxy:
                 continue
 
             if not _is_request(msg):
-                # Shouldn't happen on the client side, but pass through
                 await self.upstream.write_message(msg)
                 continue
 
@@ -109,7 +106,6 @@ class MCPProxy:
             if result.decision == Decision.SANITIZE:
                 msg = _apply_request_modifications(msg, result.modifications)
 
-            # Track metadata for response-side policies
             self._pending[msg.get("id")] = {
                 "method": ctx.method,
                 "tool_name": ctx.tool_name,
@@ -125,7 +121,6 @@ class MCPProxy:
                 logger.info("Upstream disconnected")
                 break
 
-            # Notifications from upstream pass through without policy checks
             if _is_notification(msg):
                 await self.client.write_message(msg)
                 continue

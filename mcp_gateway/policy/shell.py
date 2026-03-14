@@ -12,19 +12,17 @@ import re
 import shlex
 from typing import Any
 
-from gateway.app.config import ShellPolicyConfig
-from gateway.app.policy.engine import Decision, PolicyResult, PolicyRule, RequestContext, ResponseContext
+from mcp_gateway.config import ShellPolicyConfig
+from mcp_gateway.policy.engine import Decision, PolicyResult, PolicyRule, RequestContext, ResponseContext
 
 logger = logging.getLogger(__name__)
 
-# Tool names / methods that typically execute shell commands
 SHELL_TOOL_NAMES = {
     "shell", "shell.execute", "run_command", "execute_command",
     "bash", "terminal", "process.run", "exec", "run",
     "run_terminal_command",
 }
 
-# Argument keys that typically hold the command string
 COMMAND_ARG_KEYS = {"command", "cmd", "shell", "script", "args", "exec"}
 
 
@@ -53,7 +51,6 @@ def _find_command_string(arguments: dict[str, Any]) -> str | None:
     for key in COMMAND_ARG_KEYS:
         if key in arguments and isinstance(arguments[key], str):
             return arguments[key]
-    # Fallback: look in nested structures
     for v in arguments.values():
         if isinstance(v, str) and len(v) > 2:
             return v
@@ -89,7 +86,6 @@ class ShellSafetyRule(PolicyRule):
             if not base:
                 continue
 
-            # Check against blocked commands (exact match on base command)
             for blocked in self.config.blocked_commands:
                 blocked_parts = blocked.split()
                 seg_parts = segment.split()
@@ -100,7 +96,6 @@ class ShellSafetyRule(PolicyRule):
                             reason=f"Shell command '{base}' is in the blocked list",
                         )
 
-            # Check subshell / backtick / $() expansions
             if re.search(r"\$\(|`[^`]+`", segment):
                 return PolicyResult(
                     decision=Decision.DENY,
@@ -124,5 +119,4 @@ class ShellSafetyRule(PolicyRule):
         return PolicyResult(decision=Decision.ALLOW)
 
     def evaluate_response(self, ctx: ResponseContext) -> PolicyResult:
-        # Shell safety is request-side only
         return PolicyResult(decision=Decision.ALLOW)

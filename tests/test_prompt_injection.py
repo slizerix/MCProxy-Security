@@ -2,9 +2,9 @@
 
 import pytest
 
-from gateway.app.config import PromptInjectionConfig
-from gateway.app.policy.engine import Decision, RequestContext
-from gateway.app.policy.rules_prompt_injection import PromptInjectionRule
+from mcp_gateway.config import PromptInjectionConfig
+from mcp_gateway.policy.engine import Decision, RequestContext
+from mcp_gateway.policy.prompt_injection import PromptInjectionRule
 
 
 @pytest.fixture
@@ -70,7 +70,6 @@ class TestPromptInjectionDetection:
         assert result.score > 0
 
     def test_below_threshold_allowed(self, rule: PromptInjectionRule):
-        # A mildly suspicious input that shouldn't cross the threshold
         result = rule.evaluate_request(_ctx("Can you explain what system prompt means?"))
         assert result.decision == Decision.ALLOW
 

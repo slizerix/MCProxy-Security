@@ -2,9 +2,9 @@
 
 import pytest
 
-from gateway.app.config import ShellPolicyConfig
-from gateway.app.policy.engine import Decision, RequestContext
-from gateway.app.policy.rules_shell import ShellSafetyRule
+from mcp_gateway.config import ShellPolicyConfig
+from mcp_gateway.policy.engine import Decision, RequestContext
+from mcp_gateway.policy.shell import ShellSafetyRule
 
 
 @pytest.fixture

@@ -1,8 +1,8 @@
 """
-MCP Firewall Gateway — entrypoint.
+MCP Firewall Gateway -- entrypoint.
 
 Usage:
-    python -m gateway.app.main --config gateway/config.yaml -- npx -y @modelcontextprotocol/server-filesystem /tmp
+    python -m mcp_gateway.main --config config.yaml -- npx -y @modelcontextprotocol/server-filesystem /tmp
 
 Everything after '--' is treated as the upstream MCP server command.
 """
@@ -15,14 +15,14 @@ import logging
 import sys
 from pathlib import Path
 
-from gateway.app.config import GatewayConfig, load_config
-from gateway.app.logging_middleware import configure_logging
-from gateway.app.mcp_transport import open_client_transport, open_upstream_transport
-from gateway.app.policy.engine import PolicyEngine
-from gateway.app.policy.rules_pii import PIIRule
-from gateway.app.policy.rules_prompt_injection import PromptInjectionRule
-from gateway.app.policy.rules_shell import ShellSafetyRule
-from gateway.app.proxy import MCPProxy
+from mcp_gateway.config import GatewayConfig, load_config
+from mcp_gateway.audit import configure_logging
+from mcp_gateway.transport import open_client_transport, open_upstream_transport
+from mcp_gateway.policy.engine import PolicyEngine
+from mcp_gateway.policy.pii import PIIRule
+from mcp_gateway.policy.prompt_injection import PromptInjectionRule
+from mcp_gateway.policy.shell import ShellSafetyRule
+from mcp_gateway.proxy import MCPProxy
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ async def _run(cfg: GatewayConfig, upstream_cmd: list[str]) -> None:
     engine = _build_policy_engine(cfg)
     proxy = MCPProxy(client_transport, upstream_transport, engine)
 
-    logger.info("MCP Firewall Gateway running — proxying traffic")
+    logger.info("MCP Firewall Gateway running -- proxying traffic")
     try:
         await proxy.run()
     finally:
@@ -71,18 +71,16 @@ async def _run(cfg: GatewayConfig, upstream_cmd: list[str]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="MCP Firewall Gateway — authorization proxy for MCP servers",
+        description="MCP Firewall Gateway -- authorization proxy for MCP servers",
     )
     parser.add_argument(
         "--config", "-c",
         type=Path,
         default=None,
-        help="Path to gateway config YAML (default: gateway/config.yaml)",
+        help="Path to gateway config YAML (default: config.yaml)",
     )
-    # Everything after '--' is the upstream command
     args, upstream_cmd = parser.parse_known_args()
 
-    # Strip a leading '--' if present
     if upstream_cmd and upstream_cmd[0] == "--":
         upstream_cmd = upstream_cmd[1:]
 
